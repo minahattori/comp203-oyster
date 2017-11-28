@@ -27,10 +27,11 @@ public class TravelTrackerTest {
     OysterCardReader paddingtonReader = OysterReaderLocator.atStation(Station.PADDINGTON);
     OysterCardReader bakerStreetReader = OysterReaderLocator.atStation(Station.BAKER_STREET);
     OysterCardReader kingsCrossReader = OysterReaderLocator.atStation(Station.KINGS_CROSS);
-    //JourneyEvent start = new JourneyEvent("38400000-8cf0-11bd-b23e-10b96e4ef00d",paddingtonReader);
-    //JourneyEvent end = new JourneyEvent("38400000-8cf0-11bd-b23e-10b96e4ef00d",bakerStreetReader);
+    //JourneyStart start = new JourneyStart(38400000-8cf0-11bd-b23e-10b96e4ef00d,paddingtonReader);
+    //JourneyEnd end = new JourneyEnd(38400000-8cf0-11bd-b23e-10b96e4ef00d,bakerStreetReader);
     //Journey journey1 = new Journey(start, end);
     TravelTracker travelTracker = new TravelTracker();
+
 
     @Test
     public void checkPeakJourney(){

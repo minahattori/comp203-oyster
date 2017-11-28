@@ -14,16 +14,16 @@ public class Example {
         TravelTracker travelTracker = new TravelTracker();
         travelTracker.connect(paddingtonReader, bakerStreetReader, kingsCrossReader);
         paddingtonReader.touch(myCard);
-        //minutesPass(1);
+        minutesPass(1);
         bakerStreetReader.touch(myCard);
-        //minutesPass(1);
+        minutesPass(5);
         bakerStreetReader.touch(myCard);
-        //minutesPass(1);
+        minutesPass(10);
         kingsCrossReader.touch(myCard);
         travelTracker.chargeAccounts();
         System.out.println("HI");
     }
     private static void minutesPass(int n) throws InterruptedException {
-        Thread.sleep(n * 60 * 1000);
+        Thread.sleep(n * 60*100);
     }
 }

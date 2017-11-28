@@ -87,16 +87,23 @@ public class TravelTracker implements ScanListener {
     @Override
     public void cardScanned(UUID cardId, UUID readerId) {
         if (currentlyTravelling.contains(cardId)) {
-            eventLog.add(new JourneyEnd(cardId, readerId));
+            long temp = new Long("1511872816049");
+            JourneyEnd e1 = new JourneyEnd(cardId, readerId,temp);
+            System.out.println("end" + e1.time());
+            eventLog.add(e1);
             currentlyTravelling.remove(cardId);
         } else {
             if (CustomerDatabase.getInstance().isRegisteredId(cardId)) {
                 currentlyTravelling.add(cardId);
-                eventLog.add(new JourneyStart(cardId, readerId));
+                JourneyStart e2 = new JourneyStart(cardId, readerId, 1511872810044);
+                System.out.println("start" + e2.time());
+                eventLog.add(e2);
             } else {
                 throw new UnknownOysterCardException(cardId);
             }
         }
+
+
     }
 
 }
