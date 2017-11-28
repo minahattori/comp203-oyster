@@ -10,11 +10,14 @@ import java.util.*;
 
 public class TravelTracker implements ScanListener {
 
-    static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal(2.40);
-    static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal(3.20);
+    static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal(1.60);
+    static final BigDecimal OFF_PEAK_LONG_JOURNEY_PRICE = new BigDecimal(2.70);
+    static final BigDecimal PEAK_LONG_JOURNEY_PRICE = new BigDecimal(3.80);
+    static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal(2.90);
 
     private final List<JourneyEvent> eventLog = new ArrayList<JourneyEvent>();
     private final Set<UUID> currentlyTravelling = new HashSet<UUID>();
+    private boolean peak = false;
 
     public void chargeAccounts() {
         CustomerDatabase customerDatabase = CustomerDatabase.getInstance();
@@ -55,8 +58,22 @@ public class TravelTracker implements ScanListener {
             BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
             if (peak(journey)) {
                 journeyPrice = PEAK_JOURNEY_PRICE;
+                peak = true;
+                if (longJourney(journey)) {
+                    journeyPrice = PEAK_LONG_JOURNEY_PRICE;
+                }
+            } else if (longJourney(journey)) {
+                journeyPrice = OFF_PEAK_LONG_JOURNEY_PRICE;
             }
             customerTotal = customerTotal.add(journeyPrice);
+        }
+
+
+        if(peak && customerTotal.compareTo(new BigDecimal(9.00)) > 0) {
+            customerTotal = new BigDecimal(9.00);
+            peak = false;
+        } else if (customerTotal.compareTo(new BigDecimal(7.00)) > 0) {
+            customerTotal = new BigDecimal(7.00);
         }
 
         PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
@@ -66,12 +83,15 @@ public class TravelTracker implements ScanListener {
         return poundsAndPence.setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
+    private boolean longJourney(Journey journey) { return journey.durationSeconds() > (25*60) ;}
     private boolean peak(Journey journey) {
         return peak(journey.startTime()) || peak(journey.endTime());
     }
 
+
+
     //CHANGE BACK TO PRIVATE!!!!!!!!!!!
-    public boolean peak(Date time) {
+    private boolean peak(Date time) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(time);
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -84,19 +104,47 @@ public class TravelTracker implements ScanListener {
         }
     }
 
+
+    public void cardScannedTime(UUID cardId, UUID readerId, Date time) {
+
+    }
     @Override
     public void cardScanned(UUID cardId, UUID readerId) {
+        //long temp = new Long("1511872816049");
         if (currentlyTravelling.contains(cardId)) {
-            long temp = new Long("1511872816049");
-            JourneyEnd e1 = new JourneyEnd(cardId, readerId,temp);
-            System.out.println("end" + e1.time());
+            JourneyEnd e1 = new JourneyEnd(cardId, readerId);
+            //System.out.println("end" + e1.time());
             eventLog.add(e1);
             currentlyTravelling.remove(cardId);
         } else {
             if (CustomerDatabase.getInstance().isRegisteredId(cardId)) {
                 currentlyTravelling.add(cardId);
-                JourneyStart e2 = new JourneyStart(cardId, readerId, 1511872810044);
-                System.out.println("start" + e2.time());
+                JourneyStart e2 = new JourneyStart(cardId, readerId);
+                //System.out.println("start" + e2.time());
+                eventLog.add(e2);
+            } else {
+                throw new UnknownOysterCardException(cardId);
+            }
+        }
+
+
+    }
+
+    // new
+
+    public void cardScanned(UUID cardId, UUID readerId, Date time) {
+        //long temp = new Long("1511872816049");
+        long t = time.getTime();
+        if (currentlyTravelling.contains(cardId)) {
+            JourneyEnd e1 = new JourneyEnd(cardId, readerId, t);
+            //System.out.println("end" + e1.time());
+            eventLog.add(e1);
+            currentlyTravelling.remove(cardId);
+        } else {
+            if (CustomerDatabase.getInstance().isRegisteredId(cardId)) {
+                currentlyTravelling.add(cardId);
+                JourneyStart e2 = new JourneyStart(cardId, readerId, t);
+                //System.out.println("start" + e2.time());
                 eventLog.add(e2);
             } else {
                 throw new UnknownOysterCardException(cardId);

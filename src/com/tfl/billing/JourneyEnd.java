@@ -7,4 +7,11 @@ public class JourneyEnd extends JourneyEvent {
     public JourneyEnd(UUID cardId, UUID readerId, long time) {
         super(cardId, readerId, time);
     }
+
+    //orig
+    public JourneyEnd(UUID cardId, UUID readerId) {
+        super(cardId, readerId);
+    }
 }
+
+
