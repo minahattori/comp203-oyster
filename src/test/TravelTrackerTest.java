@@ -13,6 +13,7 @@ import com.tfl.underground.Station;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.*;
 
 
 import com.oyster.*;
@@ -32,7 +33,6 @@ public class TravelTrackerTest {
 
     //JourneyEvent je = context.mock(JourneyEvent());
 
-    OysterCard myCard = new OysterCard("38400000-8cf0-11bd-b23e-10b96e4ef00d");
     OysterCardReader paddingtonReader = OysterReaderLocator.atStation(Station.PADDINGTON);
     OysterCardReader bakerStreetReader = OysterReaderLocator.atStation(Station.BAKER_STREET);
     OysterCardReader kingsCrossReader = OysterReaderLocator.atStation(Station.KINGS_CROSS);
@@ -48,18 +48,33 @@ public class TravelTrackerTest {
 
 
     @Test
-    public void checkChargeAccounts(){ //check customer is charged correctly for one journey
+    public void checkChargeAccountsWithShortTrip(){ //check customer is charged correctly for one journey
+        OysterCard myCard = new OysterCard("3b5a03cb-2be6-4ed3-b83e-94858b43e407");
+        Customer cust = new Customer("Alex Hood", myCard);
+        //CustomerDatabase.getInstance().add(cust);
+
+        JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), myCard.id(), new Long("1511872816049"));
+        JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), myCard.id(), new Long("1511872916070"));
+
+        Journey j = new Journey(jstartEvent, jendEvent);
 
         travelTracker.connect(paddingtonReader,bakerStreetReader);
 
-        travelTracker.cardScanned(myCard.id(), paddingtonReader.id());
-        travelTracker.cardScanned(myCard.id(), bakerStreetReader.id());
-        travelTracker.chargeAccounts();
+        Date s = j.startTime();
+        Date e = j.endTime();
+
+        travelTracker.cardScanned(myCard.id(), paddingtonReader.id(),s);
+        travelTracker.cardScanned(myCard.id(), bakerStreetReader.id(), e);
+        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(1.60)));
 
     }
 
     @Test
-    public void checkChargeAccountsWithLengthTrip() {
+    public void checkChargeAccountsWithLongTrip() {
+
+        OysterCard myCard = new OysterCard("38400000-8cf0-11bd-b23e-10b96e4ef00d");
+        Customer cust = new Customer("Mina Hattori", myCard);
+        //CustomerDatabase.getInstance().add(cust);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), myCard.id(), new Long("1511872816049"));
         JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), myCard.id(), new Long("1511874816070"));
@@ -73,12 +88,14 @@ public class TravelTrackerTest {
 
         travelTracker.cardScanned(myCard.id(), paddingtonReader.id(),s);
         travelTracker.cardScanned(myCard.id(), bakerStreetReader.id(), e);
-        travelTracker.chargeAccounts();
+        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(2.70)));
 
     }
 
     @Test
     public void checkDailyCapforOffPeakCustomer(){
+        OysterCard myCard = new OysterCard("3f1b3b55-f266-4426-ba1b-bcc506541866");
+        Customer cust = new Customer("Annie Chen", myCard);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), myCard.id(), new Long("1511872816049"));
         JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), myCard.id(), new Long("1511874816070"));
@@ -109,13 +126,15 @@ public class TravelTrackerTest {
         travelTracker.cardScanned(myCard.id(), bakerStreetReader.id(),j3.startTime());
         travelTracker.cardScanned(myCard.id(), paddingtonReader.id(), j3.endTime());
 
-        travelTracker.chargeAccounts();
+        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(7.00)));
 
 
     }
 
     @Test
     public void checkDailyCapforPeakCustomer(){
+        OysterCard myCard = new OysterCard("07b0bcb1-87df-447f-bf5c-d9961ab9d01e");
+        Customer cust = new Customer("Sherry Xu", myCard);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), myCard.id(), new Long("1511872816049"));
         JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), myCard.id(), new Long("1511874816070"));
@@ -146,16 +165,21 @@ public class TravelTrackerTest {
         travelTracker.cardScanned(myCard.id(), bakerStreetReader.id(),j3.startTime());
         travelTracker.cardScanned(myCard.id(), paddingtonReader.id(), j3.endTime());
 
-        travelTracker.chargeAccounts();
-
+        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(9.00)));
 
     }
 
-
-    //mock object for...? how can we see that the travel tracker actually connected?
-    // go through the example code
-    // how does oyster card class interact with travel tracker (ex in travel tracker cardScanned
-    // uses cardid and readerid...cardid is from oyster class?)
-
+    @Test
+    public void testUnknownCardDoesNotScan(){
+        OysterCard myCard = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e407");
+        try{
+            travelTracker.cardScanned(myCard.id(), bakerStreetReader.id());
+            Assert.fail("Expected Exception not Found");
+        }catch(UnknownOysterCardException e){
+            System.out.println("Expected Exception Found");
+            return;
+        }
+        Assert.fail("Incorrect Exception Found");
+    }
 
 }
