@@ -45,16 +45,11 @@ public class TravelTracker implements ScanListener {
         BigDecimal customerTotal = new BigDecimal(0);
         // calculates customers total for the day
         for (Journey journey : journeys) {
-            BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
-            if (peak(journey)) {
-                journeyPrice = PEAK_JOURNEY_PRICE;
+            if (peak(journey)){
                 peak = true;
-                if (longJourney(journey)) {
-                    journeyPrice = PEAK_LONG_JOURNEY_PRICE;
-                }
-            } else if (longJourney(journey)) {
-                journeyPrice = OFF_PEAK_LONG_JOURNEY_PRICE;
             }
+            //extracted method to calculate one journey charge
+            BigDecimal journeyPrice = calculateOneJourneyCharge(peak, journey);
             customerTotal = customerTotal.add(journeyPrice);
         }
 
@@ -66,6 +61,19 @@ public class TravelTracker implements ScanListener {
             customerTotal = new BigDecimal(7.00);
         }
         return customerTotal;
+    }
+
+    private BigDecimal calculateOneJourneyCharge(boolean peak, Journey journey) {
+        BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
+        if (peak) {
+            journeyPrice = PEAK_JOURNEY_PRICE;
+            if (longJourney(journey)) {
+                journeyPrice = PEAK_LONG_JOURNEY_PRICE;
+            }
+        } else if (longJourney(journey)) {
+            journeyPrice = OFF_PEAK_LONG_JOURNEY_PRICE;
+        }
+        return journeyPrice;
     }
 
     //extracted method to keep methods clear
@@ -88,7 +96,7 @@ public class TravelTracker implements ScanListener {
     }
 
     //extracted method to keep methods clear
-    private void findJourneysFor(Customer customer, List<JourneyEvent> customerJourneyEvents) {
+    public void findJourneysFor(Customer customer, List<JourneyEvent> customerJourneyEvents) {
         for (JourneyEvent journeyEvent : eventLog) {
             if (journeyEvent.cardId().equals(customer.cardId())) {
                 customerJourneyEvents.add(journeyEvent);
@@ -123,7 +131,6 @@ public class TravelTracker implements ScanListener {
 
 
 
-    //CHANGE BACK TO PRIVATE!!!!!!!!!!!
     private boolean peak(Date time) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(time);
