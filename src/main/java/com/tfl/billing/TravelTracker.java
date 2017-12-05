@@ -10,10 +10,10 @@ import java.util.*;
 
 public class TravelTracker implements ScanListener {
 
-    static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal(1.60);
-    static final BigDecimal OFF_PEAK_LONG_JOURNEY_PRICE = new BigDecimal(2.70);
-    static final BigDecimal PEAK_LONG_JOURNEY_PRICE = new BigDecimal(3.80);
-    static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal(2.90);
+    static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal("1.60");
+    static final BigDecimal OFF_PEAK_LONG_JOURNEY_PRICE = new BigDecimal("2.70");
+    static final BigDecimal PEAK_LONG_JOURNEY_PRICE = new BigDecimal("3.80");
+    static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal("2.90");
 
     private final List<JourneyEvent> eventLog = new ArrayList<JourneyEvent>();
     private final Set<UUID> currentlyTravelling = new HashSet<UUID>();
@@ -37,7 +37,10 @@ public class TravelTracker implements ScanListener {
         List<Journey> journeys = addJourneysToList(customerJourneyEvents);
 
         BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
-        PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
+        BigDecimal roundedCustomerTotal = roundToNearestPenny(customerTotal);
+        System.out.println("cust total in totaljournfor " + roundedCustomerTotal);
+        PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundedCustomerTotal);
+        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
         //go through our adaptor ^
     }
 
@@ -55,10 +58,10 @@ public class TravelTracker implements ScanListener {
 
 
         if(peak && customerTotal.compareTo(new BigDecimal(9.00)) > 0) {
-            customerTotal = new BigDecimal(9.00);
+            customerTotal = new BigDecimal("9.00");
             peak = false;
         } else if (customerTotal.compareTo(new BigDecimal(7.00)) > 0) {
-            customerTotal = new BigDecimal(7.00);
+            customerTotal = new BigDecimal("7.00");
         }
         return customerTotal;
     }
@@ -115,7 +118,8 @@ public class TravelTracker implements ScanListener {
 
         BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
 
-        PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
+        PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
+        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
         return customerTotal;
     }
 
@@ -190,7 +194,6 @@ public class TravelTracker implements ScanListener {
                 throw new UnknownOysterCardException(cardId);
             }
         }
-
 
     }
 

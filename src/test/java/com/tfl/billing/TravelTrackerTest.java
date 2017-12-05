@@ -1,4 +1,5 @@
-import com.tfl.billing. *;
+package com.tfl.billing;
+import com.tfl.billing.*;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.is;
@@ -45,6 +46,8 @@ public class TravelTrackerTest {
     TravelTracker travelTracker = new TravelTracker();
 
     List<Customer> custdata = CustomerDatabase.getInstance().getCustomers();
+    CustomerDatabaseAdapter db = new CustomerDatabaseAdapter();
+    PaymentsSystemAdapter psa = PaymentsSystemAdapter.getInstance();
 
 
 
@@ -56,7 +59,13 @@ public class TravelTrackerTest {
     @Test
     public void checkChargeAccountsWithShortTrip(){ //check customer is charged correctly for one journey
 
-        Customer cust = custdata.get(1);
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e555");
+        Customer cust = new Customer ("Sherry Xu", o1);
+        db.add(cust);
+
+        //if(db.isRegisteredId(o1.id())) System.out.print("works");
+
+        //Customer cust1 = custdata.get(1);
         //CustomerDatabase.getInstance().add(cust);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), cust.cardId(), new Long("1511872816049"));
@@ -71,13 +80,18 @@ public class TravelTrackerTest {
 
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),s);
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), e);
-        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(1.60)));
+        //assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(1.60)));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("1.60")));
 
     }
 
     @Test
     public void checkChargeAccountsWithLongTrip() {
-        Customer cust = custdata.get(4);
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e556");
+        Customer cust = new Customer ("Annie Chen", o1);
+        db.add(cust);
         //CustomerDatabase.getInstance().add(cust);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), cust.cardId(), new Long("1511872816049"));
@@ -92,13 +106,18 @@ public class TravelTrackerTest {
 
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),s);
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), e);
-        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(2.70)));
+        travelTracker.chargeAccounts();
+
+        //poundsAndPence.setScale(2, BigDecimal.ROUND_HALF_UP)
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("2.70")));
 
     }
 
     @Test
     public void checkDailyCapforOffPeakCustomer(){
-        Customer cust = custdata.get(2);
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e557");
+        Customer cust = new Customer ("Mina Hattori", o1);
+        db.add(cust);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), cust.cardId(), new Long("1511872816049"));
         JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), cust.cardId(), new Long("1511874816070"));
@@ -129,14 +148,18 @@ public class TravelTrackerTest {
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(),j3.startTime());
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(), j3.endTime());
 
-        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(7.00)));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("7.00")));
 
 
     }
 
     @Test
     public void checkDailyCapforPeakCustomer(){
-        Customer cust = custdata.get(3);
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e559");
+        Customer cust = new Customer ("Beyonce Knowless", o1);
+        db.add(cust);
 
         JourneyEvent jstartEvent = new JourneyStart(paddingtonReader.id(), cust.cardId(), new Long("1511872816049"));
         JourneyEvent jendEvent = new JourneyEnd(bakerStreetReader.id(), cust.cardId(), new Long("1511874816070"));
@@ -161,13 +184,15 @@ public class TravelTrackerTest {
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(),j1.startTime());
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(), j1.endTime());
 
-        travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),j2.startTime());
+        travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(), j2.startTime());
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), j2.endTime());
 
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(),j3.startTime());
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(), j3.endTime());
 
-        assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(9.00)));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("9.00")));
 
     }
 
