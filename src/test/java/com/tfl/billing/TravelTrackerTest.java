@@ -23,6 +23,11 @@ import java.math.BigDecimal;
 import java.util.*;
 
 
+// create our own customer database as current one is unreliable. (new adapter class new function so that it works 100%)
+// adaptor or mock object is okay, up to your choice
+// to create folder structure, unmark src as source direct, or use finder. mark folder above com.tfl.billing as test or src
+// ok to change structure / go through adapter first.
+//
 
 public class TravelTrackerTest {
 

@@ -38,7 +38,7 @@ public class TravelTracker implements ScanListener {
 
         BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
         PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-
+        //go through our adaptor ^
     }
 
     private BigDecimal calculateTotalCharge(boolean peak, List<Journey> journeys) {
@@ -145,9 +145,7 @@ public class TravelTracker implements ScanListener {
     }
 
 
-    public void cardScannedTime(UUID cardId, UUID readerId, Date time) {
 
-    }
     @Override
     public void cardScanned(UUID cardId, UUID readerId) {
         //long temp = new Long("1511872816049");
@@ -171,6 +169,9 @@ public class TravelTracker implements ScanListener {
     }
 
     // new
+    // fix duplication
+    // maybe not public -> private
+
     public void cardScanned(UUID cardId, UUID readerId, Date time) {
         //long temp = new Long("1511872816049");
         long t = time.getTime();
