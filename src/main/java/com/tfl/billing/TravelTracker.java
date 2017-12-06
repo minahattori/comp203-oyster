@@ -38,7 +38,7 @@ public class TravelTracker implements ScanListener {
 
         BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
         BigDecimal roundedCustomerTotal = roundToNearestPenny(customerTotal);
-        System.out.println("cust total in totaljournfor " + roundedCustomerTotal);
+        //System.out.println("cust total in totaljournfor " + roundedCustomerTotal);
         PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundedCustomerTotal);
         //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
         //go through our adaptor ^
@@ -99,7 +99,7 @@ public class TravelTracker implements ScanListener {
     }
 
     //extracted method to keep methods clear
-    public void findJourneysFor(Customer customer, List<JourneyEvent> customerJourneyEvents) {
+    private void findJourneysFor(Customer customer, List<JourneyEvent> customerJourneyEvents) {
         for (JourneyEvent journeyEvent : eventLog) {
             if (journeyEvent.cardId().equals(customer.cardId())) {
                 customerJourneyEvents.add(journeyEvent);
@@ -108,20 +108,20 @@ public class TravelTracker implements ScanListener {
     }
 
     //copy of totalJourneysFor for testing
-    public BigDecimal calculateChargeFor(Customer customer) {
-        boolean peak = false;
-        List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
-        // finds journeys for this customer
-        findJourneysFor(customer, customerJourneyEvents);
-
-        List<Journey> journeys = addJourneysToList(customerJourneyEvents);
-
-        BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
-
-        PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-        return customerTotal;
-    }
+//    public BigDecimal calculateChargeFor(Customer customer) {
+//        boolean peak = false;
+//        List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
+//        // finds journeys for this customer
+//        findJourneysFor(customer, customerJourneyEvents);
+//
+//        List<Journey> journeys = addJourneysToList(customerJourneyEvents);
+//
+//        BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
+//
+//        PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
+//        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
+//        return customerTotal;
+//    }
 
 
     private BigDecimal roundToNearestPenny(BigDecimal poundsAndPence) {
@@ -129,11 +129,10 @@ public class TravelTracker implements ScanListener {
     }
 
     private boolean longJourney(Journey journey) { return journey.durationSeconds() > (25*60) ;}
+
     private boolean peak(Journey journey) {
         return peak(journey.startTime()) || peak(journey.endTime());
     }
-
-
 
     private boolean peak(Date time) {
         Calendar calendar = Calendar.getInstance();
@@ -147,7 +146,6 @@ public class TravelTracker implements ScanListener {
             cardReader.register(this);
         }
     }
-
 
 
     @Override
@@ -175,8 +173,9 @@ public class TravelTracker implements ScanListener {
     // new
     // fix duplication
     // maybe not public -> private
+    //for testing V
 
-    public void cardScanned(UUID cardId, UUID readerId, Date time) {
+    protected void cardScanned(UUID cardId, UUID readerId, Date time) {
         //long temp = new Long("1511872816049");
         long t = time.getTime();
         if (currentlyTravelling.contains(cardId)) {
