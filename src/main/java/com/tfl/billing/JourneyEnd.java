@@ -4,11 +4,12 @@ import java.util.UUID;
 
 public class JourneyEnd extends JourneyEvent {
 
-    public JourneyEnd(UUID cardId, UUID readerId, long time) {
+    //new constructor created for testing purposes
+    protected JourneyEnd(UUID cardId, UUID readerId, long time) {
         super(cardId, readerId, time);
     }
 
-    //orig
+    //original constructor
     public JourneyEnd(UUID cardId, UUID readerId) {
         super(cardId, readerId);
     }

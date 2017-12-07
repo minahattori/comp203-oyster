@@ -24,57 +24,45 @@ import java.math.BigDecimal;
 import java.util.*;
 
 
-// create our own customer database as current one is unreliable. (new adapter class new function so that it works 100%)
-// adaptor or mock object is okay, up to your choice
-// to create folder structure, unmark src as source direct, or use finder. mark folder above com.tfl.billing as test or src
-// ok to change structure / go through adapter first.
-//
 
 public class TravelTrackerTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
 
-    //JourneyEvent je = context.mock(JourneyEvent());
-
+    // Initializing oyster card read stations to use for testing
     OysterCardReader paddingtonReader = OysterReaderLocator.atStation(Station.PADDINGTON);
     OysterCardReader bakerStreetReader = OysterReaderLocator.atStation(Station.BAKER_STREET);
     OysterCardReader kingsCrossReader = OysterReaderLocator.atStation(Station.KINGS_CROSS);
-    //JourneyStart start = new JourneyStart(38400000-8cf0-11bd-b23e-10b96e4ef00d,paddingtonReader);
-    //JourneyEnd end = new JourneyEnd(38400000-8cf0-11bd-b23e-10b96e4ef00d,bakerStreetReader);
-    //Journey journey1 = new Journey(start, end);
 
     TravelTracker travelTracker = new TravelTracker();
 
-    //List<Customer> custdata = CustomerDatabase.getInstance().getCustomers();
+    // Using the adapter classes for customer database and payment system
     CustomerDatabaseAdapter db = new CustomerDatabaseAdapter();
     PaymentsSystemAdapter psa = PaymentsSystemAdapter.getInstance();
 
-    //List<JourneyEvent> eventlog = new ArrayList<JourneyEvent>();
-    //travelTracker.connect(paddingtonReader,bakerStreetReader);
 
-
+    // Test for off peak short trip
     @Test
-    public void checkChargeAccountsWithShortTrip(){ //check customer is charged correctly for one journey
+    public void checkChargeAccountsWithOffPeakShortTrip(){ //check customer is charged correctly for one journey
 
         OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e555");
-        Customer cust = new Customer ("Sherry Xu", o1);
+        Customer cust = new Customer ("Kris Jenner", o1);
         db.add(cust);
 
         //simulate a short off peak journey
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),new Date(2017, 11, 11, 15, 30));
-        travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 15, 15));
-        //assertThat(travelTracker.calculateChargeFor(cust), is(new BigDecimal(1.60)));
+        travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 15, 35));
         travelTracker.chargeAccounts();
 
         assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("1.60")));
-
     }
 
+    // Test for off peak long trip
     @Test
-    public void checkChargeAccountsWithLongTrip() {
+    public void checkChargeAccountsWithOffPeakLongTrip() {
         OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e556");
-        Customer cust = new Customer ("Annie Chen", o1);
+        Customer cust = new Customer ("Kaitlyn Jenner", o1);
         db.add(cust);
 
         //simulate a long off peak journey
@@ -82,15 +70,45 @@ public class TravelTrackerTest {
         travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 16, 30));
         travelTracker.chargeAccounts();
 
-        //poundsAndPence.setScale(2, BigDecimal.ROUND_HALF_UP)
         assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("2.70")));
 
     }
 
+    // Test for peak time short trip
     @Test
-    public void checkDailyCapforOffPeakCustomer(){
+    public void checkChargeAccountsWithPeakShortTrip(){
+
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e515");
+        Customer cust = new Customer ("Khloe Kardashian", o1);
+        db.add(cust);
+
+        travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),new Date(2017, 11, 11, 18, 30));
+        travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 18, 45));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("2.90")));
+    }
+
+    // Test fpr peak time long trip
+    @Test
+    public void checkChargeAccountsWithPeakLongTrip() {
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e556");
+        Customer cust = new Customer ("Kim Kardashian", o1);
+        db.add(cust);
+
+        travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),new Date(2017, 11, 11, 18, 30));
+        travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 19, 30));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("3.80")));
+
+    }
+
+    // Test daily cap for off peak customer
+    @Test
+    public void checkDailyCapForOffPeakCustomer(){
         OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e557");
-        Customer cust = new Customer ("Mina Hattori", o1);
+        Customer cust = new Customer ("Kourtney Kardashian", o1);
         db.add(cust);
 
         //simulate multiple off peak journeys totalling over 7.00
@@ -110,13 +128,14 @@ public class TravelTrackerTest {
 
         assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("7.00")));
 
-
     }
 
+
+    // Test daily cap for peak customer
     @Test
-    public void checkDailyCapforPeakCustomer(){
+    public void checkDailyCapforPeakCustomer(){  //check that daily cap works for customer with at least one peak journey
         OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e559");
-        Customer cust = new Customer ("Beyonce Knowless", o1);
+        Customer cust = new Customer ("Rob Kardashian", o1);
         db.add(cust);
 
         travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(), new Date(2017, 11, 11, 12, 30));
@@ -138,6 +157,38 @@ public class TravelTrackerTest {
 
     }
 
+
+    // Test charges for multiple customers
+    @Test
+    public void checkChargeAccountsWithMultipleCardsAndTrips() {
+        OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e256");
+        Customer cust = new Customer ("Kendall Jenner", o1);
+        db.add(cust);
+
+        OysterCard o2 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e356");
+        Customer cust1 = new Customer ("Kylie Jenner", o2);
+        db.add(cust1);
+
+        //simulate a long peak journey
+        travelTracker.cardScanned(cust.cardId(), paddingtonReader.id(),new Date(2017, 11, 11, 18, 30));
+        travelTracker.cardScanned(cust.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 19, 30));
+        travelTracker.chargeAccounts();
+
+        //simulate a long off peak journey
+        travelTracker.cardScanned(cust1.cardId(), paddingtonReader.id(),new Date(2017, 11, 11, 13, 30));
+        travelTracker.cardScanned(cust1.cardId(), kingsCrossReader.id(), new Date(2017, 11, 11, 14, 30));
+        travelTracker.chargeAccounts();
+
+        //simulate a long off peak journey
+        travelTracker.cardScanned(cust1.cardId(), kingsCrossReader.id(),new Date(2017, 11, 11, 14, 30));
+        travelTracker.cardScanned(cust1.cardId(), bakerStreetReader.id(), new Date(2017, 11, 11, 15, 30));
+        travelTracker.chargeAccounts();
+
+        assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("3.80")));
+        assertThat(psa.findChargeForCustomer(cust1.cardId()), is(new BigDecimal("5.40")));
+    }
+
+    // Test unregistered oyster card throws exception
     @Test
     public void testUnknownCardDoesNotScan(){
         OysterCard myCard = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e407");
@@ -150,14 +201,5 @@ public class TravelTrackerTest {
         }
         Assert.fail("Incorrect Exception Found");
     }
-
-
-
-/**
-    @Test
-    public void checkPeak() {
-        Date d = new Date(2017, 11, 20, 18, 30);
-        travelTracker.peak(d);
-    } **/
 
 }

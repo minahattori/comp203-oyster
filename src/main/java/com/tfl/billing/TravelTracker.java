@@ -3,13 +3,13 @@ package com.tfl.billing;
 import com.oyster.*;
 import com.tfl.external.Customer;
 import com.tfl.external.CustomerDatabase;
-import com.tfl.external.PaymentsSystem;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 public class TravelTracker implements ScanListener {
 
+    //final variables for journey prices
     static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal("1.60");
     static final BigDecimal OFF_PEAK_LONG_JOURNEY_PRICE = new BigDecimal("2.70");
     static final BigDecimal PEAK_LONG_JOURNEY_PRICE = new BigDecimal("3.80");
@@ -31,21 +31,24 @@ public class TravelTracker implements ScanListener {
     private void totalJourneysFor(Customer customer) {
         boolean peak = false;
         List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
-        // finds journeys for this customer
+        //extracted method to fine journeys for a particular customer
         findJourneysFor(customer, customerJourneyEvents);
 
+        //extracted method to add journeys to customerJourneyEvents List
         List<Journey> journeys = addJourneysToList(customerJourneyEvents);
 
+        //extracted method to calculate the total charge given the list of journeys and if any were during peak hours
         BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
         BigDecimal roundedCustomerTotal = roundToNearestPenny(customerTotal);
-        //System.out.println("cust total in totaljournfor " + roundedCustomerTotal);
+
+        //Used adapter class to execute the original methods of PaymentsSystems
+        // and also to store the values of the customers and their total charges
         PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundedCustomerTotal);
-        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-        //go through our adaptor ^
     }
 
     private BigDecimal calculateTotalCharge(boolean peak, List<Journey> journeys) {
         BigDecimal customerTotal = new BigDecimal(0);
+
         // calculates customers total for the day
         for (Journey journey : journeys) {
             if (peak(journey)){
@@ -56,16 +59,16 @@ public class TravelTracker implements ScanListener {
             customerTotal = customerTotal.add(journeyPrice);
         }
 
-
+        //checks if there should be a daily cap on the customer's total charge
         if(peak && customerTotal.compareTo(new BigDecimal(9.00)) > 0) {
             customerTotal = new BigDecimal("9.00");
-            peak = false;
         } else if (customerTotal.compareTo(new BigDecimal(7.00)) > 0) {
             customerTotal = new BigDecimal("7.00");
         }
         return customerTotal;
     }
 
+    //extracted method to calculate the charge of one journey
     private BigDecimal calculateOneJourneyCharge(boolean peak, Journey journey) {
         BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
         if (peak) {
@@ -79,7 +82,7 @@ public class TravelTracker implements ScanListener {
         return journeyPrice;
     }
 
-    //extracted method to keep methods clear
+    //extracted method to keep methods clear in totalJourneysFor
     private List<Journey> addJourneysToList(List<JourneyEvent> customerJourneyEvents) {
         List<Journey> journeys = new ArrayList<Journey>();
 
@@ -98,7 +101,7 @@ public class TravelTracker implements ScanListener {
         return journeys;
     }
 
-    //extracted method to keep methods clear
+    //extracted method to keep methods clear in totalJourneysFor
     private void findJourneysFor(Customer customer, List<JourneyEvent> customerJourneyEvents) {
         for (JourneyEvent journeyEvent : eventLog) {
             if (journeyEvent.cardId().equals(customer.cardId())) {
@@ -106,22 +109,6 @@ public class TravelTracker implements ScanListener {
             }
         }
     }
-
-    //copy of totalJourneysFor for testing
-//    public BigDecimal calculateChargeFor(Customer customer) {
-//        boolean peak = false;
-//        List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
-//        // finds journeys for this customer
-//        findJourneysFor(customer, customerJourneyEvents);
-//
-//        List<Journey> journeys = addJourneysToList(customerJourneyEvents);
-//
-//        BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
-//
-//        PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-//        //PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-//        return customerTotal;
-//    }
 
 
     private BigDecimal roundToNearestPenny(BigDecimal poundsAndPence) {
@@ -147,53 +134,35 @@ public class TravelTracker implements ScanListener {
         }
     }
 
-
     @Override
     public void cardScanned(UUID cardId, UUID readerId) {
-        //long temp = new Long("1511872816049");
-        if (currentlyTravelling.contains(cardId)) {
-            JourneyEnd e1 = new JourneyEnd(cardId, readerId);
-            //System.out.println("end" + e1.time());
-            eventLog.add(e1);
-            currentlyTravelling.remove(cardId);
-        } else {
-            if (CustomerDatabase.getInstance().isRegisteredId(cardId)) {
-                currentlyTravelling.add(cardId);
-                JourneyStart e2 = new JourneyStart(cardId, readerId);
-                //System.out.println("start" + e2.time());
-                eventLog.add(e2);
-            } else {
-                throw new UnknownOysterCardException(cardId);
-            }
-        }
+        JourneyEnd e1 = new JourneyEnd(cardId, readerId);
+        JourneyStart e2 = new JourneyStart(cardId, readerId);
 
-
+        cardScannedHelper(cardId, e1, e2);
     }
 
-    // new
-    // fix duplication
-    // maybe not public -> private
-    //for testing V
-
+    //new cardScanned method to use when we want to test for a specific time
     protected void cardScanned(UUID cardId, UUID readerId, Date time) {
-        //long temp = new Long("1511872816049");
         long t = time.getTime();
+        JourneyEnd e1 = new JourneyEnd(cardId, readerId, t);
+        JourneyStart e2 = new JourneyStart(cardId, readerId, t);
+
+        cardScannedHelper(cardId, e1, e2);
+    }
+
+    //extracted method in both cardScanned methods to eliminate repitition
+    private void cardScannedHelper(UUID cardId, JourneyEnd e1, JourneyStart e2) {
         if (currentlyTravelling.contains(cardId)) {
-            JourneyEnd e1 = new JourneyEnd(cardId, readerId, t);
-            //System.out.println("end" + e1.time());
             eventLog.add(e1);
             currentlyTravelling.remove(cardId);
         } else {
             if (CustomerDatabase.getInstance().isRegisteredId(cardId)) {
                 currentlyTravelling.add(cardId);
-                JourneyStart e2 = new JourneyStart(cardId, readerId, t);
-                //System.out.println("start" + e2.time());
                 eventLog.add(e2);
             } else {
                 throw new UnknownOysterCardException(cardId);
             }
         }
-
     }
-
 }

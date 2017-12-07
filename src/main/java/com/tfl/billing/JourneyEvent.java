@@ -8,17 +8,18 @@ public abstract class JourneyEvent {
     private final UUID readerId;
     private final long time;
 
+    //original constructor
     public JourneyEvent(UUID cardId, UUID readerId) {
         this.cardId = cardId;
         this.readerId = readerId;
         this.time = System.currentTimeMillis();
     }
 
-    //alternative constructor for testing
-    public JourneyEvent(UUID cardId, UUID readerId, long time){
+    //new constructor created for testing purposes
+    protected JourneyEvent(UUID cardId, UUID readerId, long time){
         this.cardId = cardId;
         this.readerId = readerId;
-        //set time instead of using the current time on computer
+        //set given time instead of using the current time
         this.time = time;
     }
 
