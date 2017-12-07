@@ -89,7 +89,7 @@ public class TravelTrackerTest {
         assertThat(psa.findChargeForCustomer(cust.cardId()), is(new BigDecimal("2.90")));
     }
 
-    // Test fpr peak time long trip
+    // Test for peak time long trip
     @Test
     public void checkChargeAccountsWithPeakLongTrip() {
         OysterCard o1 = new OysterCard("335a03cb-2be6-4ed3-b83e-94858b43e556");

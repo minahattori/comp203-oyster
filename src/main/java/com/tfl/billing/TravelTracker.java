@@ -29,7 +29,7 @@ public class TravelTracker implements ScanListener {
     }
 
     private void totalJourneysFor(Customer customer) {
-        boolean peak = false;
+
         List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
         //extracted method to fine journeys for a particular customer
         findJourneysFor(customer, customerJourneyEvents);
@@ -38,7 +38,7 @@ public class TravelTracker implements ScanListener {
         List<Journey> journeys = addJourneysToList(customerJourneyEvents);
 
         //extracted method to calculate the total charge given the list of journeys and if any were during peak hours
-        BigDecimal customerTotal = calculateTotalCharge(peak, journeys);
+        BigDecimal customerTotal = calculateTotalCharge(journeys);
         BigDecimal roundedCustomerTotal = roundToNearestPenny(customerTotal);
 
         //Used adapter class to execute the original methods of PaymentsSystems
@@ -46,7 +46,9 @@ public class TravelTracker implements ScanListener {
         PaymentsSystemAdapter.getInstance().charge(customer, journeys, roundedCustomerTotal);
     }
 
-    private BigDecimal calculateTotalCharge(boolean peak, List<Journey> journeys) {
+    private BigDecimal calculateTotalCharge(List<Journey> journeys) {
+        //peak boolean used for daily caps to check if there has been at least one peak journey
+        boolean peak = false;
         BigDecimal customerTotal = new BigDecimal(0);
 
         // calculates customers total for the day
@@ -55,7 +57,7 @@ public class TravelTracker implements ScanListener {
                 peak = true;
             }
             //extracted method to calculate one journey charge
-            BigDecimal journeyPrice = calculateOneJourneyCharge(peak, journey);
+            BigDecimal journeyPrice = calculateOneJourneyCharge(journey);
             customerTotal = customerTotal.add(journeyPrice);
         }
 
@@ -69,9 +71,9 @@ public class TravelTracker implements ScanListener {
     }
 
     //extracted method to calculate the charge of one journey
-    private BigDecimal calculateOneJourneyCharge(boolean peak, Journey journey) {
+    private BigDecimal calculateOneJourneyCharge(Journey journey) {
         BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
-        if (peak) {
+        if (peak(journey)) {
             journeyPrice = PEAK_JOURNEY_PRICE;
             if (longJourney(journey)) {
                 journeyPrice = PEAK_LONG_JOURNEY_PRICE;
